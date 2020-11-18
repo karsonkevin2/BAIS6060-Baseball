@@ -1,0 +1,44 @@
+---
+title: "Project"
+author: "Paul Sirena"
+date: "11/2/2020"
+output: html_document
+---
+
+```{r echo=FALSE}
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+```
+
+```{r Data echo=FALSE,warning=FALSE}
+data <- read_csv("BAIS6060_ProjectData.csv",col_types=cols(player_name=col_factor(),events=col_factor(),
+                                                           description=col_factor()))
+```
+
+```{r IBB Data echo=FALSE,warning=FALSE}
+IBB <- cbind(c("Mookie Betts","Mike Yastrzemski","Fernando Tatis Jr.","Manny Machado","Freddie Freeman","Juan Soto"),
+             c(1,2,1,4,7,12))
+IBB <- as.data.frame(IBB)
+names(IBB) <- c("player_name","IBB")
+```
+
+
+```{r Traditional Stats echo=FALSE}
+TraditionalStats <- data %>% group_by(player_name) %>%
+  summarize('PA' = sum(pitch_number==1) - 
+              sum(outs_when_up==2 & (events=="pickoff_1b" | events=="pickoff_caught_stealing_2b" | 
+                                       events=="caught_stealing_2b")), 
+            'AB' = PA - sum(events=="walk") - sum(events=="hit_by_pitch") - sum(events=="sac_fly"),
+            'H' = sum(events=="single" | events=="double" | events=="triple" | events=="home_run"), 
+            '1B' = sum(events=="single"), '2B' = sum(events=="double"), '3B' = sum(events=="triple"), 'HR' = sum(events=="home_run"),
+            'BB' = sum(events=="walk"), 'HR' = sum(events=="home_run"))
+
+TraditionalStats <- left_join(TraditionalStats,IBB,"player_name")
+
+TraditionalStats <- TraditionalStats %>%
+  transmute('Player Name' = player_name, 'PA' = PA,'AB' = AB, 'H' = H, '1B' = `1B`, '2B' = `2B`, '3B' = `3B`, 'HR' = HR,
+            'BB' = BB + as.numeric(IBB), 'IBB' = IBB, 
+            'AVG' = round(H/AB, 3), 'OBP' = round((H+BB)/PA, 3), 'SLG' = round((`1B`+2*`2B`+3*`3B`+4*HR)/AB, 3))
+```
+
