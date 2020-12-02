@@ -58,28 +58,17 @@ df$sv_id = NULL
 
 #create player look-up table
 {
-#Read player listing from MLB site
-urlPlayers = "https://www.mlb.com/players"
-pg <- read_html(urlPlayers)
+library(rjson)
+urlPlayers = "https://statsapi.mlb.com/api/v1/sports/1/players"
 
-#extract relevant HTML lines
-playerLinks = html_nodes(pg, "a.p-related-links__link")
+download.file(urlPlayers, "data.json")
+result <- fromJSON(file = "data.json")
 
-#get listing of player names
-playerNames = html_text(playerLinks)
-playerLUT = data.frame(playerNames)
-
-#string to parse
-playerAttr = html_attr(playerLinks, "href")
-
-#for each string extract the playerID and append to playerLUT
-a = strsplit(playerAttr, "")
-for (n in 1:length(a)) {
-  b = unlist(a[n])
-  mynameT = grepl("[0-9]", b)
-  cc = b[mynameT]
-  d = paste(cc, collapse = "")
-  playerLUT$playerID[n] = d
+playerCount = length(result$people)
+playerLUT = data.frame(playerNames=rep("", playerCount), playerID=rep("", playerCount), stringsAsFactors=FALSE) 
+for (n in 1:playerCount) {
+  playerLUT$playerNames[n] = result$people[[n]]$fullName
+  playerLUT$playerID[n] = result$people[[n]]$id
 }
 }
 
@@ -112,3 +101,33 @@ playerStats <- function(playerName) {
   
   return(data)
 }
+
+
+#pg = read_html(urlPlayers)
+#pgText = html
+#result = fromJSON(pg)
+
+#Read player listing from MLB site
+#urlPlayers = "https://www.mlb.com/players"
+#pg <- read_html(urlPlayers)
+
+#extract relevant HTML lines
+#playerLinks = html_nodes(pg, "a.p-related-links__link")
+
+#get listing of player names
+#playerNames = html_text(playerLinks)
+#playerLUT = data.frame(playerNames)
+
+#string to parse
+#playerAttr = html_attr(playerLinks, "href")
+
+#for each string extract the playerID and append to playerLUT
+#a = strsplit(playerAttr, "")
+#for (n in 1:length(a)) {
+#  b = unlist(a[n])
+#  mynameT = grepl("[0-9]", b)
+#  cc = b[mynameT]
+#  d = paste(cc, collapse = "")
+#  playerLUT$playerID[n] = d
+#}
+
