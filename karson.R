@@ -1,76 +1,30 @@
 rm(list = ls())
 
-library(readr)
-library(dplyr)
-library(ggplot2)
-library(rvest)
-
-#read data from file
-df = read_csv('BAIS6060_ProjectData.csv')
-
-#data cleaning
-{
-#factorized data
-factor(df$type)
-factor(df$pitch_type)
-factor(df$hit_location)
-factor(df$bb_type)
-factor(df$balls)
-factor(df$strikes)
-factor(df$events)
-factor(df$description)
-factor(df$zone)
-factor(df$stand)
-factor(df$p_throws)
-factor(df$home_team)
-factor(df$away_team)
-factor(df$outs_when_up)
-factor(df$inning)
-factor(df$inning_topbot)
-factor(df$babip_value)
-factor(df$iso_value)
-factor(df$woba_denom)
-factor(df$woba_value)
-factor(df$launch_speed_angle)
-factor(df$pitch_name)
-factor(df$if_fielding_alignment)
-factor(df$of_fielding_alignment)
-
-#Single valued (not important)
-df$game_year = NULL
-df$game_type = NULL
-
-#Duplicated data
-#df$pitcher = NULL
-#df = rename(df, pitcher = player_name)
-df$batter = NULL
-
-#No data for year
-df$spin_dir = NULL
-df$spin_rate_deprecated = NULL
-df$break_angle_deprecated = NULL
-df$break_length_deprecated = NULL
-df$tfs_deprecated = NULL
-df$tfs_zulu_deprecated = NULL
-df$umpire = NULL
-df$sv_id = NULL
-}
-
-#create player look-up table
-{
+#link to player data
 library(rjson)
 urlPlayers = "https://statsapi.mlb.com/api/v1/sports/1/players"
 
+#download and parse json file
 download.file(urlPlayers, "data.json")
 result <- fromJSON(file = "data.json")
 
+#preallocate empty data frame
 playerCount = length(result$people)
-playerLUT = data.frame(playerNames=rep("", playerCount), playerID=rep("", playerCount), stringsAsFactors=FALSE) 
+playerLUT = data.frame(playerNames=rep("", playerCount), playerID=rep("", playerCount), playerNumber=rep("",playerCount), stringsAsFactors=FALSE) 
+
+#extract player name, id, and number
 for (n in 1:playerCount) {
   playerLUT$playerNames[n] = result$people[[n]]$fullName
   playerLUT$playerID[n] = result$people[[n]]$id
+  
+  #handle players without numbers
+  if(!is.null(result$people[[n]]$primaryNumber)) {
+    playerLUT$playerNumber[n] = result$people[[n]]$primaryNumber
+  }
 }
-}
+
+# Good example, use
+#"Luis Garcia"
 
 #playerStats
 #   pulls statcast stats for a player
@@ -82,12 +36,37 @@ playerStats <- function(playerName) {
   
   #get the corresponding playerID
   player = (playerLUT$playerNames == playerName)
-  playerID = playerLUT$playerID[player]
+  
+  playerLUTmini = playerLUT[player,]
+  
+  playerID = playerLUTmini$playerID
+  
+  matchCount = length(playerID)
   
   #if name not found, error out
-  if(length(playerID) == 0) {
+  if(matchCount == 0) {
     err = sprintf("Name \"%s\" was not found. Ensure spelling and capitalization are correct", playerName)
-    stop(err)
+    stop(err, call. = FALSE)
+    
+  #if multiple players found
+  } else if(1 < matchCount) {
+    war = sprintf("Multiple players with name, \"%s\", found.", playerName)
+    warning(war, immediate. = TRUE, call. = FALSE)
+    print(playerLUTmini$playerNumber)
+    
+    #parse player by their number
+    inNumber = readline(prompt = "Enter player jersey number: ")
+    
+    #ensure number is valid
+    while(!(inNumber %in% playerLUTmini$playerNumber)) {
+      war2 = sprintf("\"%s\" is not a valid jersey number", inNumber)
+      warning(war2, immediate. = TRUE, call. = FALSE)
+      inNumber = readline(prompt = "Enter player jersey number: ")
+    }
+    
+    #get the player ID
+    index = (playerLUTmini$playerNumber == inNumber)
+    playerID = playerLUTmini$index
   }
   
   #put together URL for download
@@ -99,7 +78,68 @@ playerStats <- function(playerName) {
   download.file(urlDownload, "data.csv")
   data <- readr::read_csv("data.csv")
   
+  #return data frame
   return(data)
+}
+
+
+
+
+
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(rvest)
+
+#read data from file
+df = read_csv('BAIS6060_ProjectData.csv')
+
+#data cleaning
+{
+  #factorized data
+  factor(df$type)
+  factor(df$pitch_type)
+  factor(df$hit_location)
+  factor(df$bb_type)
+  factor(df$balls)
+  factor(df$strikes)
+  factor(df$events)
+  factor(df$description)
+  factor(df$zone)
+  factor(df$stand)
+  factor(df$p_throws)
+  factor(df$home_team)
+  factor(df$away_team)
+  factor(df$outs_when_up)
+  factor(df$inning)
+  factor(df$inning_topbot)
+  factor(df$babip_value)
+  factor(df$iso_value)
+  factor(df$woba_denom)
+  factor(df$woba_value)
+  factor(df$launch_speed_angle)
+  factor(df$pitch_name)
+  factor(df$if_fielding_alignment)
+  factor(df$of_fielding_alignment)
+  
+  #Single valued (not important)
+  df$game_year = NULL
+  df$game_type = NULL
+  
+  #Duplicated data
+  #df$pitcher = NULL
+  #df = rename(df, pitcher = player_name)
+  df$batter = NULL
+  
+  #No data for year
+  df$spin_dir = NULL
+  df$spin_rate_deprecated = NULL
+  df$break_angle_deprecated = NULL
+  df$break_length_deprecated = NULL
+  df$tfs_deprecated = NULL
+  df$tfs_zulu_deprecated = NULL
+  df$umpire = NULL
+  df$sv_id = NULL
 }
 
 
