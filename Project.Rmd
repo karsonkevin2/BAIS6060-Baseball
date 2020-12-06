@@ -27,7 +27,7 @@ names(IBB) <- c("player_name","IBB")
 ```{r Traditional Stats Function, echo=FALSE}
 PlayerTraditionalStats <- function(player) {
   TraditionalStats <- data %>% filter(player_name==player) %>%
-    summarize('PA' = sum(pitch_number==1) - 
+    summarize(player_name = player_name, 'PA' = sum(pitch_number==1) - 
                 sum(outs_when_up==2 & (events=="pickoff_1b" | events=="pickoff_caught_stealing_2b" | 
                                          events=="caught_stealing_2b")), 
               'AB' = PA - sum(events=="walk") - sum(events=="hit_by_pitch") - sum(events=="sac_fly"),
@@ -38,14 +38,24 @@ PlayerTraditionalStats <- function(player) {
   TraditionalStats <- left_join(TraditionalStats,IBB,"player_name")
   
   TraditionalStats <- TraditionalStats %>%
-    transmute(player_name = player_name, 'PA' = PA,'AB' = AB, 'H' = H, '1B' = `1B`, '2B' = `2B`, '3B' = `3B`, 'HR' = HR,
+    transmute('Player Name' = player_name, 'PA' = PA,'AB' = AB, 'H' = H, '1B' = `1B`, '2B' = `2B`, '3B' = `3B`, 'HR' = HR,
               'BB' = BB + as.numeric(IBB), 'IBB' = IBB, 
               'AVG' = round(H/AB, 3), 'OBP' = round((H+BB)/PA, 3), 'SLG' = round((`1B`+2*`2B`+3*`3B`+4*HR)/AB, 3),
               'OPS' = OBP+SLG)
   
-  return(TraditionalStats)
+  return(TraditionalStats[1,])
 }
 ```
+
+```{r Player Stats}
+Freeman <- PlayerTraditionalStats("Freddie Freeman")
+Betts <- PlayerTraditionalStats("Mookie Betts")
+Machado <- PlayerTraditionalStats("Manny Machado")
+Tatis <- PlayerTraditionalStats("Fernando Tatis Jr.")
+Soto <- PlayerTraditionalStats("Juan Soto")
+Yastrzemski <- PlayerTraditionalStats("Mike Yastrzemski")
+```
+
 
 ```{r Exit Velocity Analysis}
 ExitVelo <- data %>% group_by(player_name) %>% filter(description!="foul") %>%
