@@ -85,62 +85,9 @@ playerStats <- function(playerName) {
 
 
 
-
-library(readr)
-library(dplyr)
-library(ggplot2)
-library(rvest)
-
-#read data from file
-df = read_csv('BAIS6060_ProjectData.csv')
-
-#data cleaning
-{
-  #factorized data
-  factor(df$type)
-  factor(df$pitch_type)
-  factor(df$hit_location)
-  factor(df$bb_type)
-  factor(df$balls)
-  factor(df$strikes)
-  factor(df$events)
-  factor(df$description)
-  factor(df$zone)
-  factor(df$stand)
-  factor(df$p_throws)
-  factor(df$home_team)
-  factor(df$away_team)
-  factor(df$outs_when_up)
-  factor(df$inning)
-  factor(df$inning_topbot)
-  factor(df$babip_value)
-  factor(df$iso_value)
-  factor(df$woba_denom)
-  factor(df$woba_value)
-  factor(df$launch_speed_angle)
-  factor(df$pitch_name)
-  factor(df$if_fielding_alignment)
-  factor(df$of_fielding_alignment)
-  
-  #Single valued (not important)
-  df$game_year = NULL
-  df$game_type = NULL
-  
-  #Duplicated data
-  #df$pitcher = NULL
-  #df = rename(df, pitcher = player_name)
-  df$batter = NULL
-  
-  #No data for year
-  df$spin_dir = NULL
-  df$spin_rate_deprecated = NULL
-  df$break_angle_deprecated = NULL
-  df$break_length_deprecated = NULL
-  df$tfs_deprecated = NULL
-  df$tfs_zulu_deprecated = NULL
-  df$umpire = NULL
-  df$sv_id = NULL
-}
+#Alternate method of creating LUT by parsing html
+#The website's html code changed and broke this,
+#so the API was used instead which is better
 
 
 #pg = read_html(urlPlayers)
