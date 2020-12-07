@@ -1,0 +1,163 @@
+---
+title: "Final Project"
+author: "Brooke Arnold"
+date: "10/21/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+library(readr)
+library(ggplot2)
+suppressPackageStartupMessages(library(dplyr))
+library(reshape2)
+my_col_types <- cols(
+  pitch_type = col_factor(),
+  game_date = col_date(format = "%Y-%m-%d"),
+  player_name = col_factor(),
+  events = col_factor(),
+  launch_speed = col_double())
+my_na <- c("null", "")
+df <- read_csv("BAIS6060_ProjectData.csv", col_types = my_col_types, na = my_na)
+df
+```
+
+Event frequency tables by player
+```{r}
+head(df, n=20)
+names <- unique(df$player_name)
+dfFF <- df %>% subset(player_name == "Freddie Freeman")
+dfMY <- df %>% subset(player_name == "Mike Yastrzemski")
+dfFT <- df %>% subset(player_name == "Fernando Tatis Jr.")
+dfMM <- df %>% subset(player_name == "Manny Machado")
+dfJS <- df %>% subset(player_name == "Juan Soto")
+dfMB <- df %>% subset(player_name == "Mookie Betts")
+
+FFev <- table(dfFF$events)
+kbl <- knitr::kable(FFev, format = "html", caption = "Freddie Freeman")
+kableExtra::kable_styling(kbl, full_width = FALSE, bootstrap_options = c("striped", "hover"))
+
+MYev <- table(dfMY$events)
+kbl <- knitr::kable(MYev, format = "html", caption = "Mike Yastrzemski")
+kableExtra::kable_styling(kbl, full_width = FALSE, bootstrap_options = c("striped", "hover"))
+    
+FTev <- table(dfFT$events)
+kbl <- knitr::kable(FTev, format = "html", caption = "Fernando Tatis Jr.")
+kableExtra::kable_styling(kbl, full_width = FALSE, bootstrap_options = c("striped", "hover"))
+
+JSev <- table(dfJS$events)
+kbl <- knitr::kable(JSev, format = "html", caption = "Juan Soto")
+kableExtra::kable_styling(kbl, full_width = FALSE, bootstrap_options = c("striped", "hover"))
+
+MBev <- table(dfMB$events)
+kbl <- knitr::kable(MBev, format = "html", caption = "Mookie Betts")
+kableExtra::kable_styling(kbl, full_width = FALSE, bootstrap_options = c("striped", "hover"))
+
+MMev <- table(dfMM$events)
+kbl <- knitr::kable(MMev, format = "html", caption = "Manny Machado")
+kableExtra::kable_styling(kbl, full_width = FALSE, bootstrap_options = c("striped", "hover"))
+```
+
+Spray Charts
+```{r}
+df$events2 <- df$events
+levels(df$events2)[levels(df$events2) == "field_out"] <- "out"
+levels(df$events2)[levels(df$events2) == "force_out"] <- "out"
+levels(df$events2)[levels(df$events2) == "grounded_into_double_play"] <- "out"
+levels(df$events2)[levels(df$events2) == "fielders_choice_out"] <- "out"
+levels(df$events2)[levels(df$events2) == "sac_fly"] <- "out"
+levels(df$events2)[levels(df$events2) == "fielders_choice"] <- "out"
+levels(df$events2)[levels(df$events2) == "double_play"] <- "out"
+
+SprayChart <- function(PlayerName) {
+  df_spraychart <- df %>%
+  filter(player_name == PlayerName, hc_x != "null")
+  df_spraychart$hc_x <- as.numeric(df_spraychart$hc_x)
+  df_spraychart$hc_y <- as.numeric(df_spraychart$hc_y)
+  
+  PlayResultListIP <- c("out", "single", "double", "triple", "home_run")
+  PlayResultListIPColors <- c("out"="Coral", "single"="slateblue", "double"="green3", "triple"="gold", "home_run"="darkred")
+  df_spraychart$events2 <- factor(df_spraychart$events2, levels = PlayResultListIP)
+  
+  ggplot(df_spraychart, aes(hc_x, hc_y, color=events2)) +
+    labs(title = sprintf("Spray Chart for '%s'", PlayerName)) +
+    xlim(-10,300) + ylim(0, 250) +
+    geom_point() +
+    geom_segment(x=130, y=210, xend=20, yend=100, color = "black") +
+    geom_segment(x=130, y=210, xend=240, yend=100, color = "black") +
+    geom_curve(x=20, y=100, xend=240, yend=100, color = "black", curvature = 0.45) +
+    scale_color_manual(values = PlayResultListIPColors) +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+          axis.ticks = element_blank(),
+          axis.text = element_blank(),
+          axis.title = element_blank(),
+          legend.position = c(.9, 0.3),
+          legend.text = element_text(size = 12),
+          legend.title = element_blank(),
+          panel.grid = element_blank())
+}
+
+SprayChart("Freddie Freeman")
+SprayChart("Mike Yastrzemski")
+SprayChart("Fernando Tatis Jr.")
+SprayChart("Manny Machado")
+SprayChart("Juan Soto")
+SprayChart("Mookie Betts")
+```
+
+```{r}
+df %>% group_by(player_name) %>%
+  summarize(Singles = sum(events, na.rm = TRUE)) %>%
+  ggplot(aes(x = reorder(player_name, -Avg_LS), y = Avg_LS)) +
+    geom_bar(stat = "identity")
+df %>% group_by(player_name) %>%
+  summarize(Avg_LS = mean(launch_speed, na.rm = TRUE)) %>%
+  ggplot(aes(x = reorder(player_name, -Avg_LS), y = Avg_LS)) +
+    geom_bar(stat = "identity")
+df %>% group_by(player_name) %>%
+  summarize(Avg_LS = mean(launch_speed, na.rm = TRUE)) %>%
+  ggplot(aes(x = reorder(player_name, -Avg_LS), y = Avg_LS)) +
+    geom_bar(stat = "identity")
+df %>% group_by(player_name) %>%
+  summarize(Avg_LS = mean(launch_speed, na.rm = TRUE)) %>%
+  ggplot(aes(x = reorder(player_name, -Avg_LS), y = Avg_LS)) +
+    geom_bar(stat = "identity")
+
+df %>% group_by(player_name) %>%
+  summarize(Avg_LS = mean(launch_speed, na.rm = TRUE)) %>%
+  ggplot(aes(x = reorder(player_name, -Avg_LS), y = Avg_LS)) +
+    geom_bar(stat = "identity")
+df %>% group_by(player_name) %>% 
+  summarize(WOBA = sum(woba_value, na.rm = TRUE)/sum(woba_denom, na.rm = TRUE)) %>%
+  ggplot(aes(x = reorder(player_name, -WOBA), y = WOBA)) +
+    geom_bar(stat = "identity")
+```
+
+
+
+Pressure Situations
+```{r}
+df %>% subset(strikes == 2) %>%
+  group_by(player_name) %>%
+  summarize(WOBA = mean(woba_value, na.rm = TRUE)) %>%
+  ggplot(aes(x = reorder(player_name, -WOBA), y = WOBA)) +
+    geom_bar(stat = "identity") + labs(title = "WOBA with 2 strikes") +
+    xlab("Player") + theme(plot.title = element_text(hjust = 0.5))
+df %>%
+  subset(outs_when_up == 2) %>%
+  group_by(player_name) %>%
+  summarize(WOBA = mean(woba_value, na.rm = TRUE)) %>%
+  ggplot(aes(x = reorder(player_name, -WOBA), y = WOBA)) +
+    geom_bar(stat = "identity") + labs(title = "WOBA with 2 outs") +
+    xlab("Player") + theme(plot.title = element_text(hjust = 0.5))
+df %>% subset(inning == 9) %>%
+  group_by(player_name) %>%
+  summarize(WOBA = mean(woba_value, na.rm = TRUE)) %>%
+  ggplot(aes(x = reorder(player_name, -WOBA), y = WOBA)) +
+    geom_bar(stat = "identity") + labs(title = "WOBA in the 9th inning") +
+    xlab("Player") + theme(plot.title = element_text(hjust = 0.5))
+```
+
+
